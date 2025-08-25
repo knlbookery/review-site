@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, ArrowLeft, CheckCircle, Star, Shield, Smartphone, CreditCard, Calendar, Users, TrendingUp, Award, Printer as Print } from 'lucide-react';
-import { Volume2, VolumeX, Play, Pause } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle, Star, Shield, Smartphone, CreditCard, Calendar, Users, TrendingUp, Award, Printer as Print, Volume2, VolumeX, Play, Pause, Clock } from 'lucide-react';
 
 const slides = [
   {
@@ -545,17 +544,48 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [autoNavigationCountdown, setAutoNavigationCountdown] = useState<number | null>(null);
+  const [isAutoNavigationEnabled, setIsAutoNavigationEnabled] = useState(true);
 
   const nextSlide = () => {
+    setAutoNavigationCountdown(null);
     setCurrentSlide((prev) => Math.min(prev + 1, slides.length - 1));
   };
 
   const prevSlide = () => {
+    setAutoNavigationCountdown(null);
     setCurrentSlide((prev) => Math.max(prev - 1, 0));
   };
 
   const goToSlide = (index: number) => {
+    setAutoNavigationCountdown(null);
     setCurrentSlide(index);
+  };
+
+  // Auto-navigation after audio ends
+  const startAutoNavigation = () => {
+    if (!isAutoNavigationEnabled || currentSlide >= slides.length - 1) return;
+    
+    let countdown = 3;
+    setAutoNavigationCountdown(countdown);
+    
+    const countdownInterval = setInterval(() => {
+      countdown -= 1;
+      setAutoNavigationCountdown(countdown);
+      
+      if (countdown <= 0) {
+        clearInterval(countdownInterval);
+        setAutoNavigationCountdown(null);
+        nextSlide();
+      }
+    }, 1000);
+    
+    // Store interval ID for cleanup
+    return countdownInterval;
+  };
+
+  const cancelAutoNavigation = () => {
+    setAutoNavigationCountdown(null);
   };
 
   // Audio management functions
@@ -573,6 +603,7 @@ function App() {
     try {
       stopCurrentAudio();
       setAudioError(null);
+      setAutoNavigationCountdown(null);
 
       const audio = new Audio(audioFile);
       audio.preload = 'auto';
@@ -596,6 +627,10 @@ function App() {
 
       audio.addEventListener('ended', () => {
         setIsPlaying(false);
+        // Start auto-navigation countdown when audio ends
+        setTimeout(() => {
+          startAutoNavigation();
+        }, 500);
       });
 
       audio.addEventListener('error', (e) => {
@@ -636,6 +671,14 @@ function App() {
     setIsAudioEnabled(!isAudioEnabled);
     if (isAudioEnabled) {
       stopCurrentAudio();
+      setAutoNavigationCountdown(null);
+    }
+  };
+
+  const toggleAutoNavigation = () => {
+    setIsAutoNavigationEnabled(!isAutoNavigationEnabled);
+    if (!isAutoNavigationEnabled) {
+      setAutoNavigationCountdown(null);
     }
   };
 
@@ -657,10 +700,15 @@ function App() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
         e.preventDefault();
+        cancelAutoNavigation();
         nextSlide();
       } else if (e.key === 'ArrowLeft' || e.key === 'Backspace' || e.key === 'PageUp') {
         e.preventDefault();
+        cancelAutoNavigation();
         prevSlide();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelAutoNavigation();
       }
     };
 
@@ -672,6 +720,7 @@ function App() {
   useEffect(() => {
     return () => {
       stopCurrentAudio();
+      setAutoNavigationCountdown(null);
     };
   }, []);
 
@@ -679,77 +728,109 @@ function App() {
   const progressPercentage = ((currentSlide + 1) / slides.length) * 100;
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-900 text-slate-50 flex flex-col relative">
       {/* Background gradients */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-violet-400/12 rounded-full blur-3xl transform translate-x-32 -translate-y-32"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-400/10 rounded-full blur-3xl transform -translate-x-32 translate-y-32"></div>
+        <div className="absolute top-0 right-0 w-48 h-48 md:w-96 md:h-96 bg-violet-400/12 rounded-full blur-3xl transform translate-x-16 md:translate-x-32 -translate-y-16 md:-translate-y-32"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 md:w-96 md:h-96 bg-cyan-400/10 rounded-full blur-3xl transform -translate-x-16 md:-translate-x-32 translate-y-16 md:translate-y-32"></div>
       </div>
 
+      {/* Auto-navigation countdown overlay */}
+      {autoNavigationCountdown !== null && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-slate-800 border border-slate-600 rounded-2xl p-6 md:p-8 text-center max-w-sm mx-4">
+            <Clock className="w-12 h-12 text-cyan-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Next Slide</h3>
+            <p className="text-slate-300 mb-4">Automatically advancing in</p>
+            <div className="text-4xl font-bold text-cyan-400 mb-4">{autoNavigationCountdown}</div>
+            <button
+              onClick={cancelAutoNavigation}
+              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main slide content */}
-      <div className="flex-1 relative z-10 p-6 md:p-12 flex items-center justify-center">
+      <div className="flex-1 relative z-10 p-3 sm:p-6 md:p-12 flex items-center justify-center">
         <div className="w-full max-w-6xl">
-          <div className="bg-white/5 border border-white/10 rounded-lg p-8 md:p-12 backdrop-blur-md shadow-2xl min-h-[600px] flex flex-col">
+          <div className="bg-white/5 border border-white/10 rounded-lg p-4 sm:p-6 md:p-8 lg:p-12 backdrop-blur-md shadow-2xl min-h-[400px] sm:min-h-[500px] md:min-h-[600px] flex flex-col">
             {/* Kicker for first slide */}
             {currentSlideData.kicker && (
-              <div className="inline-block px-3 py-1 text-xs uppercase tracking-wider text-violet-200 bg-violet-500/20 border border-violet-500/30 rounded-full mb-6 self-start">
+              <div className="inline-block px-2 py-1 text-xs sm:text-xs uppercase tracking-wider text-violet-200 bg-violet-500/20 border border-violet-500/30 rounded-full mb-4 sm:mb-6 self-start">
                 {currentSlideData.kicker}
               </div>
             )}
 
             {/* Title */}
-            <h1 className="text-4xl md:text-6xl font-bold mb-4">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-3 sm:mb-4 leading-tight">
               {currentSlideData.title}
             </h1>
 
             {/* Subtitle for first slide */}
             {currentSlideData.subtitle && (
-              <h2 className="text-xl md:text-2xl text-cyan-400 font-semibold italic mb-8">
+              <h2 className="text-lg sm:text-xl md:text-2xl text-cyan-400 font-semibold italic mb-4 sm:mb-6 md:mb-8">
                 {currentSlideData.subtitle}
               </h2>
             )}
 
             {/* Audio Controls */}
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
               <button
                 onClick={toggleAudioEnabled}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition-colors min-h-[36px] ${
                   isAudioEnabled 
                     ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
                     : 'bg-red-500/20 text-red-400 border border-red-500/30'
                 }`}
               >
-                {isAudioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                {isAudioEnabled ? 'Audio On' : 'Audio Off'}
+                {isAudioEnabled ? <Volume2 className="w-3 h-3 sm:w-4 sm:h-4" /> : <VolumeX className="w-3 h-3 sm:w-4 sm:h-4" />}
+                <span className="hidden sm:inline">{isAudioEnabled ? 'Audio On' : 'Audio Off'}</span>
+                <span className="sm:hidden">{isAudioEnabled ? 'On' : 'Off'}</span>
+              </button>
+              
+              <button
+                onClick={toggleAutoNavigation}
+                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition-colors min-h-[36px] ${
+                  isAutoNavigationEnabled 
+                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
+                    : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                }`}
+              >
+                <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">{isAutoNavigationEnabled ? 'Auto-Nav On' : 'Auto-Nav Off'}</span>
+                <span className="sm:hidden">{isAutoNavigationEnabled ? 'Auto' : 'Manual'}</span>
               </button>
               
               {currentAudio && isAudioEnabled && (
                 <button
                   onClick={toggleAudio}
-                  className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-colors"
+                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs sm:text-sm transition-colors min-h-[36px]"
                 >
-                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                  {isPlaying ? <Pause className="w-3 h-3 sm:w-4 sm:h-4" /> : <Play className="w-3 h-3 sm:w-4 sm:h-4" />}
                   {isPlaying ? 'Pause' : 'Play'}
                 </button>
               )}
               
               {audioError && (
-                <div className="text-yellow-400 text-sm bg-yellow-500/10 px-3 py-2 rounded-lg border border-yellow-500/20">
+                <div className="text-yellow-400 text-xs sm:text-sm bg-yellow-500/10 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-yellow-500/20 max-w-full truncate">
                   {audioError}
                 </div>
               )}
             </div>
 
             {/* Progress bar */}
-            <div className="w-full bg-white/10 rounded-full h-2 mb-8">
+            <div className="w-full bg-white/10 rounded-full h-1.5 sm:h-2 mb-4 sm:mb-6 md:mb-8">
               <div 
-                className="bg-gradient-to-r from-violet-500 to-cyan-500 h-2 rounded-full transition-all duration-300 ease-out"
+                className="bg-gradient-to-r from-violet-500 to-cyan-500 h-1.5 sm:h-2 rounded-full transition-all duration-300 ease-out"
                 style={{ width: `${progressPercentage}%` }}
               ></div>
             </div>
 
             {/* Content */}
-            <div className="flex-1">
+            <div className="flex-1 overflow-hidden">
               {currentSlideData.content}
             </div>
           </div>
@@ -757,31 +838,31 @@ function App() {
       </div>
 
       {/* Footer with navigation */}
-      <footer className="relative z-10 px-6 py-4 border-t border-white/10 bg-slate-900/80 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="text-lg font-bold">
+      <footer className="relative z-10 px-3 sm:px-6 py-3 sm:py-4 border-t border-white/10 bg-slate-900/80 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+          <div className="text-sm sm:text-base md:text-lg font-bold text-center sm:text-left">
             KnLbookery — Sell More Beauty Appointments
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={prevSlide}
               disabled={currentSlide === 0}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-500 rounded transition-colors flex items-center gap-2"
+              className="px-3 sm:px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-500 rounded transition-colors flex items-center gap-1 sm:gap-2 text-sm min-h-[40px]"
             >
-              <ArrowLeft className="w-4 h-4" />
-              Prev
+              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Prev</span>
             </button>
             <button
               onClick={nextSlide}
               disabled={currentSlide === slides.length - 1}
-              className="px-4 py-2 bg-gradient-to-r from-violet-500 to-cyan-500 hover:from-violet-600 hover:to-cyan-600 disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 rounded transition-all flex items-center gap-2 font-medium"
+              className="px-3 sm:px-4 py-2 bg-gradient-to-r from-violet-500 to-cyan-500 hover:from-violet-600 hover:to-cyan-600 disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 rounded transition-all flex items-center gap-1 sm:gap-2 font-medium text-sm min-h-[40px]"
             >
-              Next
-              <ArrowRight className="w-4 h-4" />
+              <span className="hidden sm:inline">Next</span>
+              <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
             <button
               onClick={() => window.print()}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded transition-colors flex items-center gap-2"
+              className="hidden sm:flex px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded transition-colors items-center gap-2 text-sm min-h-[40px]"
             >
               <Print className="w-4 h-4" />
               Print
@@ -791,14 +872,14 @@ function App() {
       </footer>
 
       {/* Slide indicator dots */}
-      <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
+      <div className="fixed bottom-16 sm:bottom-20 left-1/2 transform -translate-x-1/2 flex gap-1.5 sm:gap-2 z-20 px-4">
         {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
-            className={`w-2 h-2 rounded-full transition-all ${
+            className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all touch-manipulation ${
               index === currentSlide 
-                ? 'bg-gradient-to-r from-violet-500 to-cyan-500 w-8' 
+                ? 'bg-gradient-to-r from-violet-500 to-cyan-500 w-6 sm:w-8' 
                 : 'bg-white/30 hover:bg-white/50'
             }`}
           />
