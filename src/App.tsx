@@ -305,7 +305,7 @@ const slides = [
           <ul className="space-y-3 text-slate-300">
             <li className="flex items-start gap-3">
               <TrendingUp className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-              15–20% commission per completed booking
+              Up to GHS10 booking fee
             </li>
             <li className="flex items-start gap-3">
               <TrendingUp className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
@@ -517,9 +517,8 @@ const slides = [
     content: (
       <div>
         <ul className="space-y-3 text-lg text-slate-300 mb-8">
-          <li>• Website: knlbookery.lovable.app</li>
-          <li>• Sales: business@knlbookery.com</li>
-          <li>• Support: support@knlbookery.com</li>
+          <li>• Website: knlbookery.com</li>
+          <li>• Support: knlbookery@mail.com</li>
           <li>• Social: @KnLbookery</li>
         </ul>
         <div className="flex flex-wrap gap-4">
