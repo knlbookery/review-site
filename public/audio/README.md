@@ -11,7 +11,7 @@ Audio files should be named according to the following pattern:
 - `slide-04-solution.mp3` - The Solution slide
 - `slide-05-how-it-works.mp3` - How It Works slide
 - `slide-06-customer-love.mp3` - Why Customers Love Us slide
-- `slide-07-stylist-love.mp3` - Why Stylists Love Us slide
+- `slide-07-specialist-love.mp3` - Why Specialists Love Us slide
 - `slide-08-business-model.mp3` - Business Model slide
 - `slide-09-go-to-market.mp3` - Go-To-Market slide
 - `slide-10-competitive-edge.mp3` - Competitive Edge slide

@@ -19,7 +19,7 @@ const slides = [
             Book Now
           </button>
           <button className="px-6 py-3 bg-gradient-to-r from-violet-500 to-cyan-500 rounded-lg font-semibold hover:from-violet-600 hover:to-cyan-600 transition-all">
-            Join as a Stylist
+            Join as a Specialist
           </button>
           <button className="px-6 py-3 bg-gradient-to-r from-violet-500 to-cyan-500 rounded-lg font-semibold hover:from-violet-600 hover:to-cyan-600 transition-all">
             Talk to Sales
@@ -44,7 +44,7 @@ const slides = [
             </ul>
           </div>
           <div>
-            <h3 className="text-xl font-semibold text-cyan-400 mb-4">Stylists</h3>
+            <h3 className="text-xl font-semibold text-cyan-400 mb-4">Specialists</h3>
             <ul className="space-y-3 text-slate-300">
               <li>Low digital visibility and discoverability</li>
               <li>Juggling DMs, calls, and payments</li>
@@ -96,7 +96,7 @@ const slides = [
           </li>
           <li className="flex items-start gap-3">
             <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-            Stylists need tools that reduce admin and increase earnings.
+            Specialists need tools that reduce admin and increase earnings.
           </li>
         </ul>
       </div>
@@ -200,7 +200,7 @@ const slides = [
         <div>
           <h3 className="text-xl font-semibold text-cyan-400 mb-6 flex items-center gap-3">
             <Award className="w-6 h-6" />
-            Stylist
+            Specialist
           </h3>
           <div className="space-y-4">
             <div className="flex gap-4">
@@ -270,9 +270,9 @@ const slides = [
     )
   },
   {
-    id: 'stylist-love',
-    title: 'Why Stylists Love Us',
-    audioFile: '/audio/slide-07-stylist-love.mp3',
+    id: 'specialist-love',
+    title: 'Why Specialists Love Us',
+    audioFile: '/audio/slide-07-specialist-love.mp3',
     content: (
       <ul className="space-y-4 text-lg text-slate-300">
         <li className="flex items-start gap-3">
@@ -409,7 +409,7 @@ const slides = [
             <div className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent mb-2">
               500+
             </div>
-            <div className="text-sm text-slate-400 mb-2">Verified Stylists</div>
+            <div className="text-sm text-slate-400 mb-2">Verified Specialists</div>
             <div className="text-xs text-slate-500">Supply goal</div>
           </div>
           <div className="bg-white/5 border border-white/10 rounded-lg p-6 text-center">
@@ -527,7 +527,7 @@ const slides = [
             Book Your First Service
           </button>
           <button className="px-6 py-3 text-lg bg-gradient-to-r from-violet-500 to-cyan-500 rounded-lg font-semibold hover:from-violet-600 hover:to-cyan-600 transition-all">
-            Register as a Stylist
+            Register as a Specialist
           </button>
           <button className="px-6 py-3 text-lg bg-gradient-to-r from-violet-500 to-cyan-500 rounded-lg font-semibold hover:from-violet-600 hover:to-cyan-600 transition-all">
             Schedule a Demo
@@ -815,7 +815,7 @@ function App() {
               )}
               
               {audioError && (
-                <div className="text-yellow-400 text-xs sm:text-sm bg-yellow-500/10 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-yellow-500/20 max-w-full truncate">
+                  <p className="font-medium">Discover services & specialists</p>
                   {audioError}
                 </div>
               )}
