@@ -814,7 +814,7 @@ function App() {
               )}
               
               {audioError && (
-                  <p className="font-medium">Discover services & specialists</p>
+                <div className="text-red-400 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 bg-red-500/20 border border-red-500/30 rounded-lg">
                   {audioError}
                 </div>
               )}
