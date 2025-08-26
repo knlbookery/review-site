@@ -65,8 +65,6 @@ const slides = [
     content: (
       <div>
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
-          </div>
           <div className="bg-white/5 border border-white/10 rounded-lg p-6 text-center">
             <div className="text-4xl font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent mb-2">
               $500B+
@@ -342,7 +340,7 @@ const slides = [
         <div className="bg-white/5 border border-white/10 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-cyan-400 mb-4">Phase 1 • City Launch</h3>
           <ul className="text-sm text-slate-300 space-y-2">
-            <li>• Seed stylists in key neighborhoods</li>
+            <li>• Seed Specialists in key neighborhoods</li>
             <li>• Local partnerships & ambassador program</li>
             <li>• Targeted social + referral incentives</li>
           </ul>
