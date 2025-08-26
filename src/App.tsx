@@ -515,20 +515,17 @@ const slides = [
     content: (
       <div>
         <ul className="space-y-3 text-lg text-slate-300 mb-8">
-          <li>• Website: knlbookery.com</li>
-          <li>• Support: knlbookery@mail.com</li>
+          <a href="https://knlbookery.com"><li>• Website: knlbookery.com</li></a>
+          <li>• Support: knlbookery@mail.com / +233507134930</li>
           <li>• Social: @KnLbookery</li>
         </ul>
         <div className="flex flex-wrap gap-4">
-          <button className="px-6 py-3 text-lg bg-gradient-to-r from-violet-500 to-cyan-500 rounded-lg font-semibold hover:from-violet-600 hover:to-cyan-600 transition-all">
+          <a href="https://knlbookery.com/client-login"><button className="px-6 py-3 text-lg bg-gradient-to-r from-violet-500 to-cyan-500 rounded-lg font-semibold hover:from-violet-600 hover:to-cyan-600 transition-all">
             Book Your First Service
-          </button>
-          <button className="px-6 py-3 text-lg bg-gradient-to-r from-violet-500 to-cyan-500 rounded-lg font-semibold hover:from-violet-600 hover:to-cyan-600 transition-all">
+          </button></a>
+          <a href="https://knlbookery.com/specialist-login"><button className="px-6 py-3 text-lg bg-gradient-to-r from-violet-500 to-cyan-500 rounded-lg font-semibold hover:from-violet-600 hover:to-cyan-600 transition-all">
             Register as a Specialist
-          </button>
-          <button className="px-6 py-3 text-lg bg-gradient-to-r from-violet-500 to-cyan-500 rounded-lg font-semibold hover:from-violet-600 hover:to-cyan-600 transition-all">
-            Schedule a Demo
-          </button>
+          </button></a>
         </div>
       </div>
     )
