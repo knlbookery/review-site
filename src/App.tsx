@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, ArrowLeft, CheckCircle, Star, Shield, Smartphone, CreditCard, Calendar, Users, TrendingUp, Award, Printer as Print, Volume2, VolumeX, Play, Pause, Clock } from 'lucide-react';
+import { useAudioManager } from './hooks/useAudioManager';
+import { MobileAudioOverlay } from './components/MobileAudioOverlay';
+import { AudioControls } from './components/AudioControls';
 
 const slides = [
   {
@@ -534,12 +537,26 @@ const slides = [
 
 function App() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
-  const [audioError, setAudioError] = useState<string | null>(null);
   const [autoNavigationCountdown, setAutoNavigationCountdown] = useState<number | null>(null);
   const [isAutoNavigationEnabled, setIsAutoNavigationEnabled] = useState(true);
+  const [showMobileOverlay, setShowMobileOverlay] = useState(false);
+  const [isEnablingAudio, setIsEnablingAudio] = useState(false);
+
+  // Use the audio manager hook
+  const {
+    isAudioEnabled,
+    isPlaying,
+    audioError,
+    isUserInteracted,
+    isMobile,
+    autoplaySupported,
+    enableAudio,
+    playAudio,
+    pauseAudio,
+    stopAudio,
+    toggleAudio,
+    setAudioEnabled,
+  } = useAudioManager();
 
   const nextSlide = () => {
     setAutoNavigationCountdown(null);
@@ -558,7 +575,7 @@ function App() {
 
   // Auto-navigation after audio ends
   const startAutoNavigation = () => {
-    if (!isAutoNavigationEnabled || currentSlide >= slides.length - 1) return;
+    if (!isAutoNavigationEnabled || currentSlide >= slides.length - 1 || !isAudioEnabled) return;
     
     let countdown = 3;
     setAutoNavigationCountdown(countdown);
@@ -582,90 +599,16 @@ function App() {
     setAutoNavigationCountdown(null);
   };
 
-  // Audio management functions
-  const stopCurrentAudio = () => {
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
-      setIsPlaying(false);
-    }
-  };
-
-  const playSlideAudio = async (audioFile: string) => {
-    if (!isAudioEnabled || !audioFile) return;
-
+  // Handle mobile audio enablement
+  const handleEnableAudio = async () => {
+    setIsEnablingAudio(true);
     try {
-      stopCurrentAudio();
-      setAudioError(null);
-      setAutoNavigationCountdown(null);
-
-      const audio = new Audio(audioFile);
-      audio.preload = 'auto';
-      
-      // Set up event listeners
-      audio.addEventListener('loadstart', () => {
-        console.log('Audio loading started:', audioFile);
-      });
-
-      audio.addEventListener('canplaythrough', () => {
-        console.log('Audio can play through:', audioFile);
-      });
-
-      audio.addEventListener('play', () => {
-        setIsPlaying(true);
-      });
-
-      audio.addEventListener('pause', () => {
-        setIsPlaying(false);
-      });
-
-      audio.addEventListener('ended', () => {
-        setIsPlaying(false);
-        // Start auto-navigation countdown when audio ends
-        setTimeout(() => {
-          startAutoNavigation();
-        }, 500);
-      });
-
-      audio.addEventListener('error', (e) => {
-        console.error('Audio error:', e);
-        setAudioError(`Failed to load audio: ${audioFile}`);
-        setIsPlaying(false);
-      });
-
-      setCurrentAudio(audio);
-
-      // Attempt to play with fallback for autoplay restrictions
-      try {
-        await audio.play();
-      } catch (playError) {
-        console.warn('Autoplay prevented:', playError);
-        setAudioError('Click to enable audio playback');
-      }
+      await enableAudio();
+      setShowMobileOverlay(false);
     } catch (error) {
-      console.error('Error setting up audio:', error);
-      setAudioError('Audio system error');
-    }
-  };
-
-  const toggleAudio = () => {
-    if (currentAudio) {
-      if (isPlaying) {
-        currentAudio.pause();
-      } else {
-        currentAudio.play().catch(error => {
-          console.warn('Play failed:', error);
-          setAudioError('Unable to play audio');
-        });
-      }
-    }
-  };
-
-  const toggleAudioEnabled = () => {
-    setIsAudioEnabled(!isAudioEnabled);
-    if (isAudioEnabled) {
-      stopCurrentAudio();
-      setAutoNavigationCountdown(null);
+      console.error('Failed to enable audio:', error);
+    } finally {
+      setIsEnablingAudio(false);
     }
   };
 
@@ -676,18 +619,34 @@ function App() {
     }
   };
 
+  // Show mobile overlay when needed
+  useEffect(() => {
+    if (isMobile && !isUserInteracted && !showMobileOverlay) {
+      // Show overlay after a brief delay to let the page load
+      const timer = setTimeout(() => {
+        setShowMobileOverlay(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isMobile, isUserInteracted, showMobileOverlay]);
+
   // Effect to handle slide changes and audio playback
   useEffect(() => {
     const currentSlideData = slides[currentSlide];
-    if (currentSlideData.audioFile) {
+    if (currentSlideData.audioFile && isAudioEnabled && isUserInteracted) {
       // Small delay to ensure slide transition is complete
       const timer = setTimeout(() => {
-        playSlideAudio(currentSlideData.audioFile!);
+        playAudio(currentSlideData.audioFile!).then(() => {
+          // Start auto-navigation countdown when audio ends
+          setTimeout(() => {
+            startAutoNavigation();
+          }, 500);
+        });
       }, 500);
       
       return () => clearTimeout(timer);
     }
-  }, [currentSlide, isAudioEnabled]);
+  }, [currentSlide, isAudioEnabled, isUserInteracted, playAudio]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -713,16 +672,24 @@ function App() {
   // Cleanup audio on unmount
   useEffect(() => {
     return () => {
-      stopCurrentAudio();
+      stopAudio();
       setAutoNavigationCountdown(null);
     };
-  }, []);
+  }, [stopAudio]);
 
   const currentSlideData = slides[currentSlide];
   const progressPercentage = ((currentSlide + 1) / slides.length) * 100;
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-50 flex flex-col relative">
+      {/* Mobile Audio Overlay */}
+      {showMobileOverlay && (
+        <MobileAudioOverlay 
+          onEnableAudio={handleEnableAudio}
+          isLoading={isEnablingAudio}
+        />
+      )}
+
       {/* Background gradients */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 right-0 w-48 h-48 md:w-96 md:h-96 bg-violet-400/12 rounded-full blur-3xl transform translate-x-16 md:translate-x-32 -translate-y-16 md:-translate-y-32"></div>
@@ -771,49 +738,18 @@ function App() {
             )}
 
             {/* Audio Controls */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
-              <button
-                onClick={toggleAudioEnabled}
-                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition-colors min-h-[36px] ${
-                  isAudioEnabled 
-                    ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                    : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                }`}
-              >
-                {isAudioEnabled ? <Volume2 className="w-3 h-3 sm:w-4 sm:h-4" /> : <VolumeX className="w-3 h-3 sm:w-4 sm:h-4" />}
-                <span className="hidden sm:inline">{isAudioEnabled ? 'Audio On' : 'Audio Off'}</span>
-                <span className="sm:hidden">{isAudioEnabled ? 'On' : 'Off'}</span>
-              </button>
-              
-              <button
-                onClick={toggleAutoNavigation}
-                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition-colors min-h-[36px] ${
-                  isAutoNavigationEnabled 
-                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
-                    : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                }`}
-              >
-                <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">{isAutoNavigationEnabled ? 'Auto-Nav On' : 'Auto-Nav Off'}</span>
-                <span className="sm:hidden">{isAutoNavigationEnabled ? 'Auto' : 'Manual'}</span>
-              </button>
-              
-              {currentAudio && isAudioEnabled && (
-                <button
-                  onClick={toggleAudio}
-                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs sm:text-sm transition-colors min-h-[36px]"
-                >
-                  {isPlaying ? <Pause className="w-3 h-3 sm:w-4 sm:h-4" /> : <Play className="w-3 h-3 sm:w-4 sm:h-4" />}
-                  {isPlaying ? 'Pause' : 'Play'}
-                </button>
-              )}
-              
-              {audioError && (
-                <div className="text-red-400 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 bg-red-500/20 border border-red-500/30 rounded-lg">
-                  {audioError}
-                </div>
-              )}
-            </div>
+            <AudioControls
+              isAudioEnabled={isAudioEnabled}
+              isPlaying={isPlaying}
+              audioError={audioError}
+              isAutoNavigationEnabled={isAutoNavigationEnabled}
+              isMobile={isMobile}
+              autoplaySupported={autoplaySupported}
+              onToggleAudio={toggleAudio}
+              onToggleAudioEnabled={() => setAudioEnabled(!isAudioEnabled)}
+              onToggleAutoNavigation={toggleAutoNavigation}
+              onEnableAudio={handleEnableAudio}
+            />
 
             {/* Progress bar */}
             <div className="w-full bg-white/10 rounded-full h-1.5 sm:h-2 mb-4 sm:mb-6 md:mb-8">
